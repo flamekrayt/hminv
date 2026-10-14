@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Inventory</title>
+<style>
+  :root {
+    --bg: #f5f5f0;
+    --surface: #ffffff;
+    --border: #e0ddd6;
+    --border-strong: #c8c5be;
+    --text-primary: #1a1a18;
+    --text-secondary: #5a5a56;
+    --text-muted: #9a9a94;
+    --accent: #2563eb;
+    --accent-bg: #eff6ff;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --success: #16a34a;
+    --success-bg: #f0fdf4;
+    --warning: #d97706;
+    --warning-bg: #fffbeb;
+    --radius: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+  }
+
+  .login-card h1 {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+  }
+
+  .login-card p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+  }
+
+  .login-card input[type="password"] {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    font-size: 15px;
+    margin-bottom: 0.75rem;
+    background: #fff;
+    color: var(--text-primary);
+  }
+
+  .login-card input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .btn-primary {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover { background: #1d4ed8; }
+  .error-msg { font-size: 13px; color: var(--danger); margin-top: 0.5rem; }
+
+  /* ── MAIN APP ── */
+  #app { display: none; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 0.5px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  header h1 { font-size: 17px; font-weight: 500; }
+
+  .header-actions { display: flex; gap: 0.5rem; }
+
+  .btn {
+    padding: 0.45rem 0.85rem;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  .btn:hover { background: var(--bg); }
+  .btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.accent:hover { background: #1d4ed8; }
+  .btn.danger { color: var(--danger); border-color: var(--danger); }
+  .btn.danger:hover { background: var(--danger-bg); }
+  .btn.success-btn { color: var(--success); border-color: var(--success); }
+  .btn.success-btn:hover { background: var(--success-bg); }
+
+  main { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-bar select, .filter-bar input {
+    padding: 0.45rem 0.75rem;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    font-size: 13px;
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+
+  .filter-bar select:focus, .filter-bar input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .filter-label { font-size: 13px; color: var(--text-secondary); }
+
+  /* ── INVENTORY TABLE ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: var(--bg); }
+
+  th {
+    padding: 0.65rem 0.85rem;
+    text-align: left;
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--text-secondary);
+    border-bottom: 0.5px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  th:hover { color: var(--text-primary); }
+  th .sort-arrow { margin-left: 4px; opacity: 0.4; }
+  th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
+
+  td {
+    padding: 0.65rem 0.85rem;
+    border-bottom: 0.5px solid var(--border);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+
+  .item-cell { display: flex; align-items: center; gap: 0.6rem; }
+
+  .item-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 0.5px solid var(--border);
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+
+  .img-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    border: 0.5px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+
+  .cat-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+
+  .qty-cell { display: flex; align-items: center; gap: 0.4rem; }
+
+  .qty-num {
+    font-weight: 500;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .btn-icon {
+    width: 26px;
+    height: 26px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: 5px;
+    background: var(--surface);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+
+  .btn-icon:hover { background: var(--bg); color: var(--text-primary); }
+  .btn-icon.minus:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
+  .btn-icon.plus:hover { border-color: var(--success); color: var(--success); background: var(--success-bg); }
+
+  .expiry-warn { color: var(--warning); font-weight: 500; }
+  .expiry-danger { color: var(--danger); font-weight: 500; }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+  }
+
+  .empty-state p { margin-top: 0.5rem; font-size: 13px; }
+
+  /* ── MODAL ── */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .modal-backdrop.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 12px;
+    border: 0.5px solid var(--border);
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    padding: 1.25rem 1.25rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-header h2 { font-size: 16px; font-weight: 500; }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0.25rem;
+  }
+
+  .modal-close:hover { color: var(--text-primary); }
+
+  .modal-body { padding: 1.25rem; }
+
+  .form-group { margin-bottom: 1rem; }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    font-size: 14px;
+    background: #fff;
+    color: var(--text-primary);
+  }
+
+  .form-group input:focus,
+  .form-group select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .form-group input:disabled,
+  .form-group select:disabled { background: var(--bg); color: var(--text-muted); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+  .img-preview {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    border: 0.5px solid var(--border);
+    object-fit: cover;
+    margin-top: 0.5rem;
+    display: none;
+  }
+
+  .modal-footer {
+    padding: 0 1.25rem 1.25rem;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  .loading {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-primary);
+    color: #fff;
+    padding: 0.6rem 1.25rem;
+    border-radius: var(--radius);
+    font-size: 13px;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+
+  .toast.show { opacity: 1; }
+
+  /* ── ADD TO EXISTING MODAL ── */
+  #add-existing-modal .item-summary {
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  #add-existing-modal .item-summary strong {
+    color: var(--text-primary);
+    display: block;
+    font-size: 15px;
+    margin-bottom: 0.25rem;
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>🏠 Home Inventory</h1>
+    <p>Enter your password to continue</p>
+    <input type="password" id="pw-input" placeholder="Password" />
+    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+      <input type="checkbox" id="remember-me" checked style="width:auto; margin:0;" />
+      <label for="remember-me" style="font-size:13px; color:var(--text-secondary); margin:0; text-transform:none; letter-spacing:0; font-weight:400;">Remember me on this device</label>
+    </div>
+    <button class="btn-primary" onclick="login()">Sign in</button>
+    <div id="login-error" class="error-msg"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <header>
+    <h1>🏠 Home Inventory</h1>
+    <div class="header-actions">
+      <button class="btn" onclick="refreshInventory()">↻ Refresh</button>
+      <button class="btn accent" onclick="openAddModal()">+ Add item</button>
+      <button class="btn" onclick="signOut()" title="Sign out of this device">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="filter-bar">
+      <span class="filter-label">Filter:</span>
+      <select id="filter-cat" onchange="applyFilters()">
+        <option value="">All categories</option>
+      </select>
+      <select id="sort-by" onchange="applyFilters()">
+        <option value="category">Sort by category</option>
+        <option value="item">Sort by item</option>
+        <option value="expiry">Sort by expiry</option>
+        <option value="quantity">Sort by quantity</option>
+        <option value="purchase">Sort by purchase date</option>
+      </select>
+      <select id="sort-dir" onchange="applyFilters()">
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Category</th>
+            <th>Qty</th>
+            <th>Expiry</th>
+            <th>Purchased</th>
+            <th>Place</th>
+            <th>Price</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="inventory-body">
+          <tr><td colspan="8"><div class="empty-state">Loading inventory…</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- ADD NEW BATCH MODAL -->
+<div class="modal-backdrop" id="add-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Add new item</h2>
+      <button class="modal-close" onclick="closeModal('add-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Category</label>
+          <select id="add-cat" onchange="updateItemDropdown()">
+            <option value="">Select category…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Item</label>
+          <select id="add-item" onchange="prefillImage()" disabled>
+            <option value="">Select item…</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" id="img-preview-group">
+        <img id="add-img-preview" class="img-preview" src="" alt="Item image" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="add-qty" min="1" value="1" />
+        </div>
+        <div class="form-group">
+          <label>Expiry date</label>
+          <input type="date" id="add-expiry" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date of purchase</label>
+          <input type="date" id="add-purchase-date" />
+        </div>
+        <div class="form-group">
+          <label>Place of purchase</label>
+          <select id="add-place">
+            <option value="">Select place…</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Price (S$)</label>
+        <input type="number" id="add-price" min="0" step="0.01" placeholder="e.g. 5.90" />
+      </div>
+      <div id="add-error" class="error-msg"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn accent" onclick="submitNewBatch()" id="add-submit-btn">Add to inventory</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TO EXISTING MODAL -->
+<div class="modal-backdrop" id="add-existing-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Add to existing batch</h2>
+      <button class="modal-close" onclick="closeModal('add-existing-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="item-summary" id="existing-summary"></div>
+      <div class="form-group">
+        <label>How many to add</label>
+        <input type="number" id="existing-qty" min="1" value="1" />
+      </div>
+      <div id="existing-error" class="error-msg"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('add-existing-modal')">Cancel</button>
+      <button class="btn success-btn" onclick="submitAddExisting()" id="existing-submit-btn">Add stock</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfhgd_q3z5pB-VDhGk2m78poFPPoarcEH9ekj78QwI7zJudWhnReUAz4T6-IUx5CT8sw/exec';
+
+let sessionAuth = false;
+let referenceData = [];
+let placesData = [];
+let inventoryData = [];
+let currentExistingRow = null;
+
+// ── AUTH ──
+// On page load, check if this device has already been authenticated.
+// If yes, skip the login screen entirely.
+(function checkSavedAuth() {
+  if (localStorage.getItem('hi_auth') === 'true') {
+    sessionAuth = true;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadAll();
+  }
+})();
+
+document.getElementById('pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+
+async function login() {
+  const pw = document.getElementById('pw-input').value;
+  const remember = document.getElementById('remember-me').checked;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!pw) { errEl.textContent = 'Enter your password.'; return; }
+
+  try {
+    const res = await post({ action: 'checkPassword', password: pw });
+    if (res.result === true) {
+      sessionAuth = true;
+      // If "remember me" is ticked, save an auth flag in this browser.
+      // This is not the password itself — just a flag saying "authenticated".
+      if (remember) {
+        localStorage.setItem('hi_auth', 'true');
+      }
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      await loadAll();
+    } else {
+      errEl.textContent = 'Incorrect password.';
+    }
+  } catch {
+    errEl.textContent = 'Could not connect. Try again.';
+  }
+}
+
+// ── DATA LOADING ──
+async function loadAll() {
+  await Promise.all([loadReference(), loadPlaces()]);
+  await loadInventory();
+}
+
+async function loadReference() {
+  const res = await post({ action: 'getReference' });
+  referenceData = res.result || [];
+  populateCategoryDropdowns();
+}
+
+async function loadPlaces() {
+  const res = await post({ action: 'getPlaces' });
+  placesData = res.result || [];
+  const sel = document.getElementById('add-place');
+  sel.innerHTML = '<option value="">Select place…</option>';
+  placesData.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p; o.textContent = p;
+    sel.appendChild(o);
+  });
+}
+
+async function loadInventory() {
+  const tbody = document.getElementById('inventory-body');
+  tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">Loading…</div></td></tr>';
+  const res = await post({ action: 'getInventory' });
+  inventoryData = res.result || [];
+  applyFilters();
+}
+
+async function refreshInventory() {
+  await loadInventory();
+  showToast('Inventory refreshed');
+}
+
+// ── DROPDOWNS ──
+function populateCategoryDropdowns() {
+  const cats = [...new Set(referenceData.map(r => r.category))].sort();
+  const filterCat = document.getElementById('filter-cat');
+  filterCat.innerHTML = '<option value="">All categories</option>';
+  cats.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    filterCat.appendChild(o);
+  });
+
+  const addCat = document.getElementById('add-cat');
+  addCat.innerHTML = '<option value="">Select category…</option>';
+  cats.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    addCat.appendChild(o);
+  });
+}
+
+function updateItemDropdown() {
+  const cat = document.getElementById('add-cat').value;
+  const itemSel = document.getElementById('add-item');
+  itemSel.innerHTML = '<option value="">Select item…</option>';
+  itemSel.disabled = !cat;
+  document.getElementById('add-img-preview').style.display = 'none';
+
+  if (cat) {
+    const items = referenceData.filter(r => r.category === cat);
+    items.forEach(r => {
+      const o = document.createElement('option');
+      o.value = r.item;
+      o.dataset.img = r.imageUrl || '';
+      o.textContent = r.item;
+      itemSel.appendChild(o);
+    });
+    itemSel.disabled = false;
+  }
+}
+
+function prefillImage() {
+  const sel = document.getElementById('add-item');
+  const opt = sel.options[sel.selectedIndex];
+  const imgUrl = opt ? opt.dataset.img : '';
+  const preview = document.getElementById('add-img-preview');
+  if (imgUrl) {
+    preview.src = imgUrl;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+// ── FILTERS & RENDER ──
+function applyFilters() {
+  const cat = document.getElementById('filter-cat').value;
+  const sortBy = document.getElementById('sort-by').value;
+  const sortDir = document.getElementById('sort-dir').value;
+
+  let data = [...inventoryData];
+  if (cat) data = data.filter(r => r.category === cat);
+
+  data.sort((a, b) => {
+    let va, vb;
+    if (sortBy === 'category') { va = a.category; vb = b.category; }
+    else if (sortBy === 'item') { va = a.item; vb = b.item; }
+    else if (sortBy === 'expiry') { va = a.expiryDate; vb = b.expiryDate; }
+    else if (sortBy === 'quantity') { va = Number(a.quantity); vb = Number(b.quantity); }
+    else if (sortBy === 'purchase') { va = a.dateOfPurchase; vb = b.dateOfPurchase; }
+
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  renderInventory(data);
+}
+
+function renderInventory(data) {
+  const tbody = document.getElementById('inventory-body');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">📦<p>No items yet. Add your first item using the button above.</p></div></td></tr>';
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  tbody.innerHTML = data.map(row => {
+    const imgHtml = row.imageUrl
+      ? `<img class="item-img" src="${row.imageUrl}" alt="${row.item}" onerror="this.style.display='none'">`
+      : `<div class="img-placeholder">📦</div>`;
+
+    let expiryHtml = formatDate(row.expiryDate);
+    if (row.expiryDate) {
+      const exp = new Date(row.expiryDate);
+      const diffDays = Math.ceil((exp - today) / (1000*60*60*24));
+      if (diffDays < 0) expiryHtml = `<span class="expiry-danger">${formatDate(row.expiryDate)} (expired)</span>`;
+      else if (diffDays <= 30) expiryHtml = `<span class="expiry-warn">${formatDate(row.expiryDate)} (${diffDays}d)</span>`;
+    }
+
+    const price = row.price ? `S$${Number(row.price).toFixed(2)}` : '—';
+
+    return `<tr>
+      <td>
+        <div class="item-cell">
+          ${imgHtml}
+          <span>${row.item}</span>
+        </div>
+      </td>
+      <td><span class="cat-badge">${row.category}</span></td>
+      <td>
+        <div class="qty-cell">
+          <button class="btn-icon minus" title="Used one" onclick="reduceStock(${row.rowNumber}, '${row.category}', '${row.item}')">−</button>
+          <span class="qty-num">${row.quantity}</span>
+          <button class="btn-icon plus" title="Add to this batch" onclick="openAddExisting(${row.rowNumber}, '${row.category}', '${row.item}', ${row.quantity})">+</button>
+        </div>
+      </td>
+      <td>${expiryHtml}</td>
+      <td>${formatDate(row.dateOfPurchase)}</td>
+      <td>${row.placeOfPurchase || '—'}</td>
+      <td>${price}</td>
+      <td></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── ADD NEW BATCH ──
+function openAddModal() {
+  document.getElementById('add-cat').value = '';
+  document.getElementById('add-item').innerHTML = '<option value="">Select item…</option>';
+  document.getElementById('add-item').disabled = true;
+  document.getElementById('add-qty').value = 1;
+  document.getElementById('add-expiry').value = '';
+  document.getElementById('add-purchase-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('add-place').value = '';
+  document.getElementById('add-price').value = '';
+  document.getElementById('add-img-preview').style.display = 'none';
+  document.getElementById('add-error').textContent = '';
+  document.getElementById('add-modal').classList.add('open');
+}
+
+async function submitNewBatch() {
+  const cat = document.getElementById('add-cat').value;
+  const item = document.getElementById('add-item').value;
+  const qty = parseInt(document.getElementById('add-qty').value);
+  const expiry = document.getElementById('add-expiry').value;
+  const purchaseDate = document.getElementById('add-purchase-date').value;
+  const place = document.getElementById('add-place').value;
+  const price = document.getElementById('add-price').value;
+  const errEl = document.getElementById('add-error');
+
+  errEl.textContent = '';
+  if (!cat) { errEl.textContent = 'Select a category.'; return; }
+  if (!item) { errEl.textContent = 'Select an item.'; return; }
+  if (!qty || qty < 1) { errEl.textContent = 'Enter a valid quantity.'; return; }
+
+  const ref = referenceData.find(r => r.category === cat && r.item === item);
+  const imageUrl = ref ? ref.imageUrl : '';
+
+  const btn = document.getElementById('add-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>Saving…';
+
+  try {
+    await post({
+      action: 'addNewBatch',
+      category: cat,
+      item,
+      imageUrl,
+      quantity: qty,
+      expiryDate: expiry,
+      placeOfPurchase: place,
+      dateOfPurchase: purchaseDate,
+      price: price ? Number(price) : ''
+    });
+    closeModal('add-modal');
+    await loadInventory();
+    showToast(`${item} added to inventory`);
+  } catch {
+    errEl.textContent = 'Could not save. Try again.';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Add to inventory';
+  }
+}
+
+// ── ADD TO EXISTING ──
+function openAddExisting(rowNumber, category, item, currentQty) {
+  currentExistingRow = { rowNumber, category, item };
+  document.getElementById('existing-summary').innerHTML =
+    `<strong>${item}</strong>${category} · Current stock: ${currentQty}`;
+  document.getElementById('existing-qty').value = 1;
+  document.getElementById('existing-error').textContent = '';
+  document.getElementById('add-existing-modal').classList.add('open');
+}
+
+async function submitAddExisting() {
+  const qty = parseInt(document.getElementById('existing-qty').value);
+  const errEl = document.getElementById('existing-error');
+  errEl.textContent = '';
+  if (!qty || qty < 1) { errEl.textContent = 'Enter a valid quantity.'; return; }
+
+  const btn = document.getElementById('existing-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>Saving…';
+
+  try {
+    await post({
+      action: 'addToExisting',
+      rowNumber: currentExistingRow.rowNumber,
+      category: currentExistingRow.category,
+      item: currentExistingRow.item,
+      quantityToAdd: qty
+    });
+    closeModal('add-existing-modal');
+    await loadInventory();
+    showToast(`${qty} added to ${currentExistingRow.item}`);
+  } catch {
+    errEl.textContent = 'Could not save. Try again.';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Add stock';
+  }
+}
+
+// ── REDUCE STOCK ──
+async function reduceStock(rowNumber, category, item) {
+  if (!confirm(`Mark one unit of "${item}" as used?`)) return;
+  try {
+    await post({ action: 'reduceStock', rowNumber, category, item });
+    await loadInventory();
+    showToast(`One unit of ${item} used`);
+  } catch {
+    showToast('Could not update. Try again.');
+  }
+}
+
+// ── HELPERS ──
+function signOut() {
+  if (!confirm('Sign out of this device? You will need to enter the password again next visit.')) return;
+  localStorage.removeItem('hi_auth');
+  sessionAuth = false;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function formatDate(val) {
+  if (!val) return '—';
+  const d = new Date(val);
+  if (isNaN(d)) return val;
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function post(data) {
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+</script>
+</body>
+</html>
